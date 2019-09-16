@@ -1,0 +1,36 @@
+WEBVTT
+
+NOTE
+opacity: 0.5; should apply.
+color: blue; should apply.
+color: green; should not apply because there is a blank line preceding it.
+background: red; should apply because multiple STYLE blocks are supported.
+font-size: 50px; should not apply because all STYLE blocks must appear before the first cue.
+
+STYLE
+::cue {
+    opacity: 0.5;
+}
+::cue {
+    color: blue;
+}
+
+::cue {
+    color: green;
+}
+
+STYLE
+::cue {
+    background: red;
+}
+
+00:00:00.000 --> 00:00:05.000
+<v Voice1>This <i>is</i> a <b>test</b> subtitle
+
+00:00:00.000 --> 00:00:05.000
+<v Voice2>Here <i>is</i> a <b>second</b> subtitle
+
+STYLE
+::cue {
+    font-size: 50px;
+}

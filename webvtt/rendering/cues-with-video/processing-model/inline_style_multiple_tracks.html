@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<title>Inline Style Multiple Tracks, verifies that inline styles do not apply to cues from other text tracks</title>
+<link rel="match" href="inline_style_multiple_tracks-ref.html">
+<link rel="stylesheet" type="text/css" href="/fonts/ahem.css" />
+<script src="/common/reftest-wait.js"></script>
+<video width="320" height="180" autoplay onplaying="this.onplaying = null; this.pause(); takeScreenshot();">
+    <source src="/media/white.webm" type="video/webm">
+    <source src="/media/white.mp4" type="video/mp4">
+    <track src="support/inline_style_multiple_tracks1.vtt">
+    <track src="support/inline_style_multiple_tracks2.vtt">
+    <script>
+    document.getElementsByTagName('track')[0].track.mode = 'showing';
+    document.getElementsByTagName('track')[1].track.mode = 'showing';
+    </script>
+</video>
+</html>
