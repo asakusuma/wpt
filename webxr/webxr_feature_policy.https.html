@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="resources/webxr_util.js"></script>
+<script src="resources/webxr_test_constants.js"></script>
+<canvas />
+
+<script>
+xr_promise_test("supportsSession rejects when xr policy not set", (t) => {
+  return promise_rejects(t, "SecurityError", navigator.xr.supportsSession("inline"),
+    "Inline supportsSession should reject")
+  .then(() => {
+      // It shouldn't matter that there's no device connected, the SecurityError
+      // should reject first.
+      return promise_rejects(t, "SecurityError", navigator.xr.supportsSession("immersive-vr"),
+        "Immersive supportsSession should reject");
+  });
+});
+
+xr_promise_test("requestSession rejects when xr policy not set", (t) => {
+  return promise_rejects(t, "SecurityError", navigator.xr.requestSession("inline"),
+    "Inline requestSession should reject")
+  .then(() => {
+    return new Promise((resolve, reject) => {
+      // The spec states that both no feature policy and any request for
+      // immersive-vr without user activation should reject with SecurityError
+      // By first simulating user activation, we thus remove any ambiguity that
+      // the SecurityError received below is due to the feature policy.
+      // The spec does currently state that lack of user activation should throw
+      // first, so this is a necessary step.
+      navigator.xr.test.simulateUserActivation(() => {
+        resolve(promise_rejects(t, "SecurityError", navigator.xr.requestSession("immersive-vr"),
+        "Immersive requestSession should reject"));
+      })
+    });
+  });
+});
+
+xr_promise_test("deviceChange does not fire when xr policy not set", (t) => {
+  t.add_cleanup(async () => {
+    await navigator.xr.test.disconnectAllDevices();
+  });
+
+  navigator.xr.addEventListener("devicechange", () => {
+    t.step(() => {
+      assert_unreached("Device change should not fire");
+    });
+  });
+
+  return new Promise((resolve) => {
+    navigator.xr.test.simulateDeviceConnection(TRACKED_IMMERSIVE_DEVICE)
+    .then(() => {
+      // Yield for an additional short amount of time to ensure that the event
+      // would have had time to propagate.
+      t.step_timeout(() => { resolve(); }, 300);
+    });
+  });
+  return Promise.reject("Not Implemented");
+});
+</script>
