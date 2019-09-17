@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Operator dictionary</title>
+<link rel="help" href="https://mathml-refresh.github.io/mathml-core/#operator-fence-separator-or-accent-mo">
+<meta name="assert" content="Verify properties of the operator dictionary">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="/mathml/support/feature-detection.js"></script>
+<script src="/mathml/support/operator-dictionary.js"></script>
+<script>
+  setup({ explicit_done: true });
+  window.addEventListener("load", runTests);
+
+  async function runTests() {
+      let epsilon = 1;
+      let dictionary = await fetchOperatorDictionary();
+      var counter = 0;
+      var tests = {
+          "lspace/rspace": null
+      };
+
+      for (key in dictionary) {
+          if (key === "") continue;
+          if (counter % entryPerChunk === 0) {
+              // Complete current async tests and create new ones for the next chunk.
+              for (name in tests) {
+                  if (tests[name]) tests[name].done();
+                  tests[name] = async_test(`Operator dictionary chunk ${counter / entryPerChunk} - ${name}`);
+              }
+          }
+
+          let parsedKey = splitKey(key);
+          let entry = dictionary[key];
+          tests["lspace/rspace"].step(function() {
+              assert_true(MathMLFeatureDetection.has_operator_spacing());
+              document.body.insertAdjacentHTML("beforeend", `<div>
+<math>\
+  <mrow>\
+    <mn>0</mn>\
+    <mo form="${parsedKey.form}">${parsedKey.characters}</mo>\
+    <mn>2</mn>\
+  </mrow>\
+</math>\
+<math>\
+  <mrow>\
+    <mn>0</mn>\
+    <mo form="${parsedKey.form}" lspace="${defaultLspace(entry)}" rspace="${defaultRspace(entry)}">${parsedKey.characters}</mo>\
+    <mn>2</mn>\
+  </mrow>\
+</math>\
+</div>`);
+              var div = document.body.lastElementChild;
+              var mrows = div.getElementsByTagName("mrow");
+              var lspace =
+                  mrows[0].children[1].getBoundingClientRect().left -
+                  mrows[0].children[0].getBoundingClientRect().right;
+              var rspace =
+                  mrows[0].children[2].getBoundingClientRect().left -
+                  mrows[0].children[1].getBoundingClientRect().right;
+              var lspaceRef =
+                  mrows[1].children[1].getBoundingClientRect().left -
+                  mrows[1].children[0].getBoundingClientRect().right;
+              var rspaceRef =
+                  mrows[1].children[2].getBoundingClientRect().left -
+                  mrows[1].children[1].getBoundingClientRect().right;
+              assert_approx_equals(lspace, lspaceRef, epsilon, `lspace (${key})`);
+              assert_approx_equals(rspace, rspaceRef, epsilon, `rspace (${key})`);
+              div.style.display = "none";
+          });
+
+          counter++;
+      }
+
+      // Complete current async tests.
+      for (name in tests) {
+          if (tests[name]) tests[name].done();
+      }
+
+      done();
+  }
+</script>
+</head>
+<body>
+  <div id="log"></div>
+</body>
+</html>
