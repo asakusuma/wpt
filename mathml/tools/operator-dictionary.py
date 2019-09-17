@@ -1,11 +1,11 @@
 #!/usr/bin/python
 
 from lxml import etree
-from utils.misc import downloadWithProgressBar
+from utils.misc import downloadWithProgressBar, UnicodeXMLURL
 import json
 
 # Retrieve the unicode.xml file if necessary.
-unicodeXML = downloadWithProgressBar("http://www.w3.org/2003/entities/2007xml/unicode.xml")
+unicodeXML = downloadWithProgressBar(UnicodeXMLURL)
 
 # Extract the mathvariants transformation.
 xsltTransform = etree.XSLT(etree.parse("./operator-dictionary.xsl"))
@@ -29,8 +29,10 @@ def parseSpaces(value, entry):
 def parseProperties(value, entry):
     attributeValue = entry.get("properties")
     if attributeValue is not None:
-        for name in ["fence", "separator", "stretchy", "symmetric", "largeop",
-                     "movablelimits", "accent"]:
+        # The fence and separator properties don't have any effect on math
+        # layout, so don't add them to the JSON file until we actually need
+        # them.
+        for name in ["stretchy", "symmetric", "largeop", "movablelimits", "accent"]:
             if attributeValue.find(name) >= 0:
                 value[name] = True
 
@@ -45,6 +47,7 @@ for entry in root:
         "characters": characters,
         "form": form
     }
+    # There is no dictionary-specified minsize/maxsize values, so no need to parse them.
     parseSpaces(value, entry)
     parseProperties(value, entry)
     operatorDictionary[key] = value
