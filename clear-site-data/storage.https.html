@@ -13,6 +13,8 @@
         return datatype.name == "storage";
       })[0];
 
+      var serviceWorkerTestPageIFrame;
+
       // The tests are set up asynchronously.
       setup({"explicit_done": true});
 
@@ -22,6 +24,23 @@
       test(function() {}, "Populate backends.");
 
       TestUtils.populateStorage()
+          .then(() => {
+            const serviceWorkerResponseOk = TestUtils.getServiceWorkerResponseOk();
+
+            // Create iFrame in the service worker's scope. This page will make a request
+            // for another page that is only served by the service worker
+            serviceWorkerTestPageIFrame = document.createElement("iframe");
+            serviceWorkerTestPageIFrame.src = "support/page_using_service_worker.html";
+            document.body.appendChild(serviceWorkerTestPageIFrame);
+
+            promise_test(function() {
+              return serviceWorkerResponseOk.then(function(responseIsOk) {
+                assert_true(responseIsOk, "Response should be 200");
+              });
+            }, "Baseline: Service worker responds to request");
+
+            return serviceWorkerResponseOk;
+          })
           .then(function() {
             // Navigate to a resource with a Clear-Site-Data header in
             // an iframe, then verify that all backends of the "storage"
@@ -44,6 +63,18 @@
                   });
                 }, test_name);
               });
+
+              promise_test(function() {
+                const serviceWorkerResponseOk = TestUtils.getServiceWorkerResponseOk();
+
+                // Tell the iframe to make a request for the URL that the service worker
+                // responds to
+                serviceWorkerTestPageIFrame.contentWindow.postMessage(null, "*");
+
+                return serviceWorkerResponseOk.then(function(responseIsOk) {
+                  assert_false(responseIsOk, "Response should not be 200");
+                });
+              }, "Service worker no longer responds to requests");
 
               done();
             });

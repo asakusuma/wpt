@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Clear-Site-Data + Service Workers Test Page</title>
+    <script src="/resources/testharness.js"></script>
+  </head>
+  <body>
+    <script>
+      function pollForControllingWorker(cb) {
+        navigator.serviceWorker.getRegistration().then(function(reg) {
+          if (navigator.serviceWorker.controller && !reg.waiting && reg.active && reg.active.state === 'activated') {
+            cb();
+          } else {
+            step_timeout(() => {
+              pollForControllingWorker(cb);
+            }, 100);
+          }
+        });
+      }
+
+      function requestServiceWorkerPage() {
+        // Make a request to a URL that is only served by the service worker
+        fetch("sw-page").then(function(result) {
+          window.top.postMessage({
+            subject: "service-worker-page-request",
+            ok: result.ok
+          }, "*");
+        });
+      }
+      window.addEventListener("message", requestServiceWorkerPage);
+
+      pollForControllingWorker(requestServiceWorkerPage);
+    </script>
+  </body>
+</html>

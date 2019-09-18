@@ -121,7 +121,7 @@ var TestUtils = (function() {
       "add": function() {
         return navigator.serviceWorker.register(
             "support/service_worker.js",
-            { scope: "support/scope-that-does-not-contain-this-test/"});
+            { scope: "support/"});
       },
       "isEmpty": function() {
         return new Promise(function(resolve, reject) {
@@ -244,6 +244,23 @@ var TestUtils = (function() {
    * be called in the test setup phase.
    */
   TestUtils.populateStorage = populate.bind(this, TestUtils.STORAGE);
+
+  /**
+   * Wait for a postMessage from an iFrame. This message communicates the result
+   * of a request that can only be served by the service worker
+   * @private
+   */
+  TestUtils.getServiceWorkerResponseOk = function() {
+    return new Promise(function(resolve) {
+      const cb = (m) => {
+        if (m.data && m.data.subject === "service-worker-page-request") {
+          window.removeEventListener("message", cb);
+          resolve(m.data.ok);
+        }
+      };
+      window.addEventListener("message", cb);
+    });
+  }
 
   /**
    * Get the support server URL that returns a Clear-Site-Data header
